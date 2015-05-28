@@ -9,25 +9,34 @@ best <- function(state, outcome) {
     #
     # Returns:
     #     Name of the hospital with the best 30-day mortality for the outcome
-    dataset <- read.csv("outcome-of-care-measures.csv", colClasses = "character")
+    dataset <- read.csv("outcome-of-care-measures.csv", stringsAsFactors=FALSE,
+                        na.strings="Not Available")
     
-    if (outcome == "heart attack") {
-        outcomeColumn <- 11
-    } elseif (outcome == "heart failure") {
-        outcomeColumn <- 17
-    } elseif (outcome == "pneumonia") {
-        outcomeColumn <- 23
-    } else {
+    # Check if state entered is present in data set
+    if (!(state %in% dataset$State)) {
         stop("invalid state")
     }
     
-    split(dataset[outcomeColumn], dataset[[state]])
+    # Check if outcome is valid, and select correct column
+    if (outcome == "heart attack") {
+        outcomeColumn <- 11
+    } else if (outcome == "heart failure") {
+        outcomeColumn <- 17
+    } else if (outcome == "pneumonia") {
+        outcomeColumn <- 23
+    } else {
+        stop("invalid outcome")
+    }
     
-    columnNumber <- which(names(dataset) == outcome) # Column of the outcome
-    dataByState <- dataset[which(dataset$State == state),] # Data for the state
+    # Data for the state
+    dataByState <- subset(dataset, State == state)
+    # Get minimum outcome value
+    minOutcomeValue <- min(dataByState[,outcomeColumn], na.rm = TRUE)
+    # Get row index where minimum outcome value occurs
+    minOutcomeIndex <- which(dataByState[,outcomeColumn] == minOutcomeValue)
     
-    minOutcomeValue <- min(dataByState[[outcome]])
-    
-    best <- dataByState[which(dataByState[[outcome]] == minOutcomeValue), "Hospital.Name"]
-    return(best)
+    # Sort resulting hospital names
+    best <- sort(dataByState[minOutcomeIndex, "Hospital.Name"])
+    # Return first name
+    return(best[1]) 
 }
